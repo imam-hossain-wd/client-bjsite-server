@@ -23,7 +23,12 @@ const client = new MongoClient(uri, {
 const run = async () => {
 
     const userCollection = client.db("bjwala").collection("user");
+    const agentCollection = client.db("bjwala").collection("agent");
+    const customerServiceCollection = client.db("bjwala").collection("customer_service");
+
     try {
+
+        //all get route from database
 
         app.get("/user", async (req, res) => {
             const query = {};
@@ -31,12 +36,38 @@ const run = async () => {
             res.send(result);
         });
 
-        //post user
+        app.get("/agent", async (req, res) => {
+            const query = {};
+            const result = await agentCollection.find(query).toArray();
+            res.send(result);
+        });
+        app.get("/customer-service", async (req, res) => {
+            const query = {};
+            const result = await customerServiceCollection.find(query).toArray();
+            res.send(result);
+        });
+
+        ///all post route from database
+        
         app.post("/user", async (req, res) => {
             const user = req.body;
             const result = await userCollection.insertOne(user);
             res.send(result);
         });
+
+        app.post("/agent", async (req, res) => {
+            const user = req.body;
+            const result = await agentCollection.insertOne(user);
+            res.send(result);
+        });
+
+        app.post("/customer-service", async (req, res) => {
+            const user = req.body;
+            const result = await customerServiceCollection.insertOne(user);
+            res.send(result);
+        });
+
+
     } finally {
     }
 };
