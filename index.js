@@ -49,49 +49,6 @@ const run = async () => {
             res.send(result);
         });
 
-
-        app.get("/agents", async (req, res) => {
-            const query = {};
-            const result = await agentCollection.find(query).toArray();
-            res.send(result);
-        });
-
-        app.get("/agent", async (req, res) => {
-            const agentId = req.body.agent_id;
-            const query = { agent_id: agentId };
-            const result = await agentCollection.find(query).toArray();
-            res.send(result);
-        });
-
-
-        app.get("/customer-services", async (req, res) => {
-            const query = {};
-            const result = await customerServiceCollection.find(query).toArray();
-            res.send(result);
-        });
-
-        app.get("/customer-service", async (req, res) => {
-            const id = req.body.id_no;
-            const query = { id_no: id };
-            const result = await customerServiceCollection.find(query).toArray();
-            res.send(result);
-        });
-
-      
-        
-        app.post("/agent", async (req, res) => {
-            const user = req.body;
-            const result = await agentCollection.insertOne(user);
-            res.send(result);
-        });
-
-        app.post("/customer-service", async (req, res) => {
-            const user = req.body;
-            const result = await customerServiceCollection.insertOne(user);
-            res.send(result);
-        });
-
-        // Update User
         app.patch("/user/:id", async (req, res) => {
             const id = req.params.id;
             const updatedUser = req.body;
@@ -111,7 +68,25 @@ const run = async () => {
         });
 
 
-        // Update Agent
+        app.post("/agent", async (req, res) => {
+            const user = req.body;
+            const result = await agentCollection.insertOne(user);
+            res.send(result);
+        });
+
+        app.get("/agents", async (req, res) => {
+            const query = {};
+            const result = await agentCollection.find(query).toArray();
+            res.send(result);
+        });
+
+        app.get("/agent/:id", async (req, res) => {
+            const agentId = req.params.id;
+            const query = { agent_id: agentId };
+            const result = await agentCollection.find(query).toArray();
+            res.send(result);
+        });
+
         app.patch("/agent/:id", async (req, res) => {
             const id = req.params.id;
             const updatedAgent = req.body;
@@ -123,7 +98,39 @@ const run = async () => {
             res.send(result);
         });
 
-        // Update Customer Service
+         // Delete Agent
+         app.delete("/agent/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { agent_id: id };
+            const result = await agentCollection.deleteOne(query);
+            res.send(result);
+        });
+
+
+
+        // customer service
+
+        app.post("/customer-service", async (req, res) => {
+            const user = req.body;
+            const result = await customerServiceCollection.insertOne(user);
+            res.send(result);
+        });
+
+        app.get("/customer-services", async (req, res) => {
+            const query = {};
+            const result = await customerServiceCollection.find(query).toArray();
+            res.send(result);
+        });
+
+
+        app.get("/customer-service/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { id_no: id };
+            const result = await customerServiceCollection.find(query).toArray();
+            res.send(result);
+        });
+
+
         app.patch("/customer-service/:id", async (req, res) => {
             const id = req.params.id;
             const updatedCustomerService = req.body;
@@ -142,25 +149,14 @@ const run = async () => {
             res.send(result);
         });
         
-
-        // Delete User
-    
-
-        // Delete Agent
-        app.delete("/agent/:id", async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: new ObjectId(id) };
-            const result = await agentCollection.deleteOne(query);
-            res.send(result);
-        });
-
         // Delete Customer Service
         app.delete("/customer-service/:id", async (req, res) => {
             const id = req.params.id;
-            const query = { _id: new ObjectId(id) };
+            const query = { id_no: id };
             const result = await customerServiceCollection.deleteOne(query);
             res.send(result);
         });
+
 
 
     } finally {
