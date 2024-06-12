@@ -23,28 +23,81 @@ const client = new MongoClient(uri, {
 const run = async () => {
 
     const userCollection = client.db("bjwala").collection("user");
-    const agentCollection = client.db("bjwala").collection("agent");
-    const customerServiceCollection = client.db("bjwala").collection("customer_service");
 
     try {
 
         // user operation
 
         app.post("/user", async (req, res) => {
-            const user = req.body;
-            const result = await userCollection.insertOne(user);
-            res.send(result);
+            try {
+                const user = req.body;
+                const userId = user?.user_id;
+                const existingUser = await userCollection.findOne({ user_id: userId });
+
+                if (existingUser) {
+                    return res.status(400).send({ error: "User already exists" });
+                }
+
+                const result = await userCollection.insertOne(user);
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "An error occurred while creating the user" });
+            }
         });
 
         app.get("/users", async (req, res) => {
-            const query = {};
-            const result = await userCollection.find(query).toArray();
-            res.send(result);
+            try {
+                const page = parseInt(req.query.page) || 1;
+                const limit = parseInt(req.query.limit) || 10;
+                const skip = (page - 1) * limit;
+                const role = req.query.role;
+
+                let query = {};
+                if (role) {
+                    query.role = role;
+                }
+
+                const users = await userCollection.find(query).skip(skip).limit(limit).toArray();
+                const totalUsers = await userCollection.countDocuments(query);
+
+                const response = {
+                    users,
+                    page,
+                    totalPages: Math.ceil(totalUsers / limit),
+                    totalUsers
+                };
+
+                res.send(response);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "An error occurred while fetching users" });
+            }
         });
 
+        // find user by role
+
+        app.get("/users/role/:role", async (req, res) => {
+            try {
+                const role = req.params.role;
+                const query = { role: role };
+                const result = await userCollection.find(query).toArray();
+
+                if (result.length === 0) {
+                    return res.status(404).send({ message: "No users found with the specified role" });
+                }
+
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "An error occurred while fetching users by role" });
+            }
+        });
+
+
         app.get("/user/:id", async (req, res) => {
-            const userId = req.params.id;
-            const query = { user_id: userId };
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
             const result = await userCollection.find(query).toArray();
             res.send(result);
         });
@@ -52,113 +105,21 @@ const run = async () => {
         app.patch("/user/:id", async (req, res) => {
             const id = req.params.id;
             const updatedUser = req.body;
-            const query = { user_id: id };
+            const query = { _id: ObjectId(id) };
             const updateDoc = {
                 $set: updatedUser,
-                };
-                const result = await userCollection.updateOne(query, updateDoc);
+            };
+            const result = await userCollection.updateOne(query, updateDoc);
             res.send(result);
         });
 
         app.delete("/user/:id", async (req, res) => {
             const id = req.params.id;
-            const query = { _id: new ObjectId(id) };
+            const query = { _id: ObjectId(id) };
             const result = await userCollection.deleteOne(query);
-            res.send(result);
-        });
-
-
-        app.post("/agent", async (req, res) => {
-            const user = req.body;
-            const result = await agentCollection.insertOne(user);
-            res.send(result);
-        });
-
-        app.get("/agents", async (req, res) => {
-            const query = {};
-            const result = await agentCollection.find(query).toArray();
-            res.send(result);
-        });
-
-        app.get("/agent/:id", async (req, res) => {
-            const agentId = req.params.id;
-            const query = { agent_id: agentId };
-            const result = await agentCollection.find(query).toArray();
-            res.send(result);
-        });
-
-        app.patch("/agent/:id", async (req, res) => {
-            const id = req.params.id;
-            const updatedAgent = req.body;
-            const query = { agent_id: id };
-            const updateDoc = {
-                $set: updatedAgent,
-            };
-            const result = await agentCollection.updateOne(query, updateDoc);
-            res.send(result);
-        });
-
-         // Delete Agent
-         app.delete("/agent/:id", async (req, res) => {
-            const id = req.params.id;
-            const query = { agent_id: id };
-            const result = await agentCollection.deleteOne(query);
-            res.send(result);
-        });
-
-
-
-        // customer service
-
-        app.post("/customer-service", async (req, res) => {
-            const user = req.body;
-            const result = await customerServiceCollection.insertOne(user);
-            res.send(result);
-        });
-
-        app.get("/customer-services", async (req, res) => {
-            const query = {};
-            const result = await customerServiceCollection.find(query).toArray();
-            res.send(result);
-        });
-
-
-        app.get("/customer-service/:id", async (req, res) => {
-            const id = req.params.id;
-            const query = { id_no: id };
-            const result = await customerServiceCollection.find(query).toArray();
-            res.send(result);
-        });
-
-
-        app.patch("/customer-service/:id", async (req, res) => {
-            const id = req.params.id;
-            const updatedCustomerService = req.body;
-            const query = { id_no: id.toString() };
-            const updateDoc = {
-                $set: updatedCustomerService,
-            };
-            const result = await customerServiceCollection.updateOne(query, updateDoc);
-
             console.log(result, 'result');
-            
-            if (result.matchedCount === 0) {
-                return res.status(404).send({ message: "Customer service record not found" });
-            }
-            
             res.send(result);
         });
-        
-        // Delete Customer Service
-        app.delete("/customer-service/:id", async (req, res) => {
-            const id = req.params.id;
-            const query = { id_no: id };
-            const result = await customerServiceCollection.deleteOne(query);
-            res.send(result);
-        });
-
-
-
     } finally {
     }
 };
