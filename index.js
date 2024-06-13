@@ -2,9 +2,11 @@ const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const bcrypt = require("bcrypt"); 
 
 const port = process.env.PROT || 5000;
-const bcrypt = require("bcrypt");
+const SALT_ROUND = Number(process.env.BCRYPT_SALT_ROUND);
+
 
 require("dotenv").config();
 const app = express();
@@ -40,7 +42,7 @@ const run = async () => {
                 }
 
                 if (user.password) {
-                    user.password = await bcrypt.hash(user.password, 10); // Hash the password if it exists
+                    user.password = await bcrypt.hash(user.password, SALT_ROUND); // Hash the password if it exists
                 }
 
                 const result = await userCollection.insertOne(user);
@@ -62,14 +64,18 @@ const run = async () => {
                 }
 
                 const isPasswordValid = await bcrypt.compare(password, user.password);
+
                 if (!isPasswordValid) {
                     return res.status(400).send({ error: "Invalid email or password" });
                 }
 
-                // const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+                const token = jwt.sign(
+                    { userId: user._id, email: user.email },
+                    process.env.JWT_SECRET,
+                    { expiresIn: '1h' }
+                );
 
-                // res.send({ token });
-                res.send({ message:"Login successfully" });
+                res.send({ message: "Login successfully", token });
             } catch (error) {
                 console.error(error);
                 res.status(500).send({ error: "An error occurred during login" });
