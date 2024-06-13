@@ -130,14 +130,63 @@ const run = async () => {
             }
         });
 
+        // find by agent id 
+
+        app.get("/user/agent/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+                const query = { user_id: id };
+                const result = await userCollection.findOne(query);
+
+                const message = {
+                    message:'আপনি যে এজেন্ট খুজচ্ছেন তার নাম আমাদের লিষ্টে নেই |দয়া করে কাষ্টমার সার্ভিসে যোগাযোগ করুন।',
+                    helpline:"কাষ্টমার সার্ভিস এর নাম্বার গুলো পেতে এই লিঙ্ক এ ক্লিক করুন"
+                }
+        
+                if (!result) {
+                    return res.status(404).send({ message });
+                }
+        
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: "An error occurred while fetching the agent" });
+            }
+        });
+
+        
 
         app.get("/user/:id", async (req, res) => {
-            const id = req.params.id;
-            console.log('user', id);
-            const query = { _id: ObjectId(id) };
-            const result = await userCollection.find(query).toArray();
-            res.send(result);
+            try {
+                const id = req.params.id;
+                
+                // Validate ObjectId
+                if (!ObjectId.isValid(id)) {
+                    throw new Error("Invalid user ID");
+                }
+        
+                const query = { _id: new ObjectId(id) };
+                const result = await userCollection.findOne(query);
+        
+                if (!result) {
+                    throw new Error("User not found");
+                }
+        
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                
+                if (error.message === "User not found") {
+                    res.status(404).send({ error: error.message });
+                } else if (error.message === "Invalid user ID") {
+                    res.status(400).send({ error: error.message });
+                } else {
+                    res.status(500).send({ error: "An error occurred while fetching the user" });
+                }
+            }
         });
+
+
 
         app.patch("/user/:id", async (req, res) => {
             const id = req.params.id;
@@ -157,7 +206,6 @@ const run = async () => {
         
             try {
                 const result = await userCollection.updateOne(query, updateDoc);
-                console.log(result, 'updated result.....');
                 res.send(result);
             } catch (error) {
                 console.error('Error updating user:', error);
